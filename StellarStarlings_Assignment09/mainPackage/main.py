@@ -34,3 +34,38 @@ if conn:
             manufacturer_id=selected_product.ManufacturerID,
             brand_id=selected_product.BrandID
         )
+ 
+       manufacturer_query = f"SELECT Manufacturer FROM dbo.tManufacturer WHERE ManufacturerID = {product.manufacturer_id}"
+       cursor = dbm.submit_sql_to_server(conn, manufacturer_query)
+       manufacturer = cursor.fetchone()
+       manufacturer_name = manufacturer[0] if manufacturer else "Unknown"
+
+       
+       brand_query = f"SELECT Brand FROM dbo.tBrand WHERE BrandID = {product.brand_id}"
+       cursor = dbm.submit_sql_to_server(conn, brand_query)
+       brand = cursor.fetchone()
+       brand_name = brand[0] if brand else "Unknown"
+
+       
+       sales_query = f"""
+            SELECT SUM(dbo.tTransactionDetail.QtyOfProduct) AS NumberOfItemsSold
+            FROM dbo.tTransactionDetail 
+            INNER JOIN dbo.tTransaction 
+            ON dbo.tTransactionDetail.TransactionID = dbo.tTransaction.TransactionID 
+            WHERE dbo.tTransaction.TransactionTypeID = 1 
+            AND dbo.tTransactionDetail.ProductID = {product.product_id}
+        """
+       cursor = dbm.submit_sql_to_server(conn, sales_query)
+       items_sold = cursor.fetchone()
+       total_sold = items_sold[0] if items_sold[0] is not None else 0
+
+        
+       final_sentence = (f"The product '{product.description}' is manufactured by '{manufacturer_name}', "
+                          f"under the brand '{brand_name}', and has sold {total_sold} units.")
+       print(final_sentence)
+
+    
+       dbm.close_connection(conn)
+else: 
+     None
+
